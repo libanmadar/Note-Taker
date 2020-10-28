@@ -1,64 +1,27 @@
-const fs = require("fs");
-const notesData = require("../db/db.json");
+const router = require("express").Router();
+const store = require("../db/store");
 
-module.exports = function(app){
+// GET "/api/notes" responds with all notes from the database
+router.get("/notes", (req, res) => {
+  store
+    .getNotes()
+    .then((notes) => res.json(notes))
+    .catch((err) => res.status(500).json(err));
+});
 
+router.post("/notes", (req, res) => {
+  store
+    .addNote(req.body)
+    .then((note) => res.json(note))
+    .catch((err) => res.status(500).json(err));
+});
 
-    
-    function writeToDB(notes){
-        notes = JSON.stringify(notes);
-        console.log (notes);
+// DELETE "/api/notes" deletes the note with an id equal to req.params.id
+router.delete("/notes/:id", (req, res) => {
+  store
+    .removeNote(req.params.id)
+    .then(() => res.json({ ok: true }))
+    .catch((err) => res.status(500).json(err));
+});
 
-        fs.writeFileSync("./db/db.json", notes, function(err){
-            if (err) {
-                return console.log(err);
-            }
-        });
-    }
-
-    app.get("/api/notes", function(req, res){
-        res.json(notesData);
-    });
-
-   
-    app.post("/api/notes", function(req, res){
-
-        if (notesData.length == 0){
-            req.body.id = "0";
-        } else{
-            req.body.id = JSON.stringify(JSON.parse(notesData[notesData.length - 1].id) + 1);
-        }
-        
-        console.log("req.body.id: " + req.body.id);
-
-        notesData.push(req.body);
-
-        writeToDB(notesData);
-        console.log(notesData);
-
-        res.json(req.body);
-    });
-
-    app.delete("/api/notes/:id", function(req, res){
-        
-        let id = req.params.id.toString();
-        console.log(id);
-
-        for (i=0; i < notesData.length; i++){
-           
-            if (notesData[i].id == id){
-                console.log("match!");
-               
-                res.send(notesData[i]);
-
-               
-                notesData.splice(i,1);
-                break;
-            }
-        }
-
-        
-        writeToDB(notesData);
-
-    });
-};
+module.exports = router;
